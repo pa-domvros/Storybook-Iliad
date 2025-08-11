@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8" />
+<title>Helen — Storybook Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#121212; --panel:#1b1b1b; --ink:#f6f7fb; --muted:#c8d0dc; --border:#2a2a2a;
+    --btn:#232323; --btnH:#343434; --accent:#5fb3ff; --ok:#3ddc97;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;}
+
+  /* Header with app title + 0.jpg thumbnail and tidy toolbar */
+  header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--border)}
+  .header-wrap{max-width:1200px;margin:0 auto;padding:8px 12px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{height:56px;width:auto;object-fit:contain;border-radius:6px;background:#0a0a0a;border:1px solid #111}
+  .app-title{font-weight:900;letter-spacing:.2px}
+  .toolbar{display:grid;grid-template-columns:auto 1fr minmax(220px,280px) minmax(200px,240px) auto auto;gap:10px;align-items:center;margin-top:8px}
+  .btn{background:var(--btn);color:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;line-height:1}
+  .btn:hover{background:var(--btnH)}
+  .btn.primary{background:var(--accent);border-color:transparent;color:#0a1626}
+  .btn.ok{background:var(--ok);border-color:transparent;color:#05140e}
+  .input,.email{background:#121212;color:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;width:100%}
+
+  /* Make placeholders white & visible */
+  ::placeholder{color:#fff;opacity:1}
+  input::placeholder, textarea::placeholder { color:#fff; opacity:1 }
+
+  /* Story pages layout */
+  main{max-width:1200px;margin:12px auto;padding:0 12px}
+  .page{display:grid;grid-template-columns:minmax(240px,35%) 1fr;gap:12px;background:#151515;border:1px solid var(--border);border-radius:12px;padding:12px;align-items:stretch;margin-bottom:10px}
+  .page img{width:100%;height:100%;object-fit:contain;background:#000;border-radius:8px}
+  textarea{width:100%;min-height:260px;background:#1d1d1d;color:#fff;border:1px solid var(--border);border-radius:10px;resize:vertical;padding:12px;font-size:16px;line-height:1.5}
+  .print-text{display:none;width:100%;padding:12px;white-space:pre-wrap;line-height:1.5;font-size:16px}
+
+  /* Word Bank modal */
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:40}
+  .card{background:#1b1b1b;border:1px solid var(--border);border-radius:12px;padding:12px;max-width:560px;width:92%;max-height:80vh;overflow:auto}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:#222;border:1px solid var(--border);color:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;font-size:13px}
+
+  /* Screen footer (credit line) */
+  .screen-footer{max-width:1200px;margin:18px auto 28px;padding:0 12px;color:var(--muted);text-align:center;font-size:13px}
+
+  /* Print */
+  @media print{
+    :root{color-scheme:light}
+    @page{size:A4 landscape;margin:10mm}
+
+    header,.screen-footer{display:none !important}
+
+    body,.page,.print-text,.page *{
+      background:#fff !important;color:#000 !important;
+      -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+    }
+
+    /* Title page first: 0.jpg left, title+name right */
+    .title-page{display:grid !important;grid-template-columns:60mm 1fr;gap:12mm;align-items:center;page-break-after:always;margin-top:10mm}
+    .title-page .thumb{width:100%;height:120mm;object-fit:contain;background:#fff;border:0}
+    .title-page h1{font-size:28pt;margin:0 0 6mm 0}
+    .title-page h2{font-size:16pt;margin:0}
+
+    /* Story pages */
+    .page{break-inside:avoid;page-break-after:always;border:0;padding:6mm 4mm;grid-template-columns:100mm 1fr}
+    textarea{display:none !important}
+    .print-text{display:block !important;font-size:12pt}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-wrap">
+    <div class="brand">
+      <img id="brandThumb" src="0.jpg" alt="Cover thumbnail" onerror="this.style.display='none'">
+      <div class="app-title">📖 Helen — Storybook Builder ✨✍️ Devised by Panagiotis Domvros, English and Drama Teacher ✍️✨</div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="langBtn">ΕΛ / EN</button>
+      <div></div>
+      <input id="titleInput" class="input" type="text" placeholder="Τίτλος ιστορίας…">
+      <input id="studentInput" class="input" type="text" placeholder="Όνομα μαθητή…">
+      <button class="btn" id="bankBtn">Λεξιλόγιο</button>
+      <button class="btn primary" id="printBtn">Print / Save PDF</button>
+    </div>
+
+    <!-- Formspree row -->
+    <div class="toolbar" style="grid-template-columns:minmax(220px,1fr) 1fr auto auto auto; margin-top:8px">
+      <input type="email" class="email" name="email" id="emailInput" placeholder="your email" form="mailForm" required>
+      <div></div>
+      <input type="file" name="attachment" accept="application/pdf" form="mailForm" class="btn" style="padding:10px">
+      <button class="btn ok" type="submit" form="mailForm">Send via Formspree</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Printable title page (built before print) -->
+  <div id="printTitlePage" class="title-page" style="display:none;"></div>
+
+  <!-- Story pages -->
+  <div id="pages"></div>
+</main>
+
+<!-- Screen-only footer with credit -->
+<div class="screen-footer">✨✍️ Devised by Panagiotis Domvros, English and Drama Teacher, All Rights Reserved ✍️✨</div>
+
+<!-- Word Bank -->
+<div class="modal" id="bankModal">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <strong id="bankTitle">Word Bank</strong>
+      <button class="btn" id="bankClose">Close</button>
+    </div>
+    <div id="bankContent"></div>
+  </div>
+</div>
+
+<!-- Formspree form lives at end so we can set hidden message -->
+<form id="mailForm" method="POST" action="https://formspree.io/f/mnnzlkzy" enctype="multipart/form-data">
+  <input type="hidden" name="to" value="pa.domvros@gmail.com">
+  <input type="hidden" name="message" id="hiddenStory">
+</form>
+
+<script>
+/* ===== i18n & Word bank ===== */
+const UI={
+  en:{ph:'Write your story here…',bank:'Word Bank',close:'Close',titlePH:'Story title…',studentPH:'Student name…'},
+  el:{ph:'Γράψε την ιστορία σου εδώ…',bank:'Λεξιλόγιο',close:'Κλείσιμο',titlePH:'Τίτλος ιστορίας…',studentPH:'Όνομα μαθητή…'}
+};
+const BANK={
+  en:[
+    {title:'Characters',items:['Achilles','Agamemnon','Hector','Odysseus','Patroclus','Menelaus','Priam','Ajax','Andromache','Helen','Paris','Thetis','Sarpedon','Diomedes','Aeneas','Apollo','Athena','Zeus','Hera','Hephaestus','Poseidon']},
+    {title:'Places',items:['Troy','Scamander River','Sparta','Argos','Achaean camp','Trojan walls','battlefield','Olympus','Achilles’ hut','ships']},
+    {title:'Themes',items:['Achilles’ anger','honor','fate','friendship','death','divine intervention','heroism','revenge','pity','ransom','war and peace']},
+    {title:'Verbs',items:['fight','duel','wound','kill','pray','beg','persuade','return','drag','mourn','bury','burn','arm','forge','challenge']},
+    {title:'Connectors',items:['first','then','however','therefore','in the end','suddenly','afterwards','because','although']}
+  ],
+  el:[
+    {title:'Πρόσωπα',items:['Αχιλλέας','Αγαμέμνων','Έκτορας','Οδυσσέας','Πάτροκλος','Μενέλαος','Πρίαμος','Αίας','Ανδρομάχη','Ελένη','Πάρης','Θέτις','Σαρπηδών','Διομήδης','Αινείας','Απόλλωνας','Αθηνά','Δίας','Ήρα','Ήφαιστος','Ποσειδώνας']},
+    {title:'Τόποι',items:['Τροία','Σκάμανδρος (ποταμός)','Σπάρτη','Άργος','στρατόπεδο Αχαιών','τείχη της Τροίας','πεδίο μάχης','Όλυμπος','σκηνή του Αχιλλέα','πλοία']},
+    {title:'Θέματα',items:['οργή του Αχιλλέα','τιμή','μοίρα','φιλία','θάνατος','θεϊκή παρέμβαση','ηρωισμός','εκδίκηση','συμπόνια','λύτρα','πόλεμος και ειρήνη']},
+    {title:'Ρήματα',items:['μάχομαι','μονομαχώ','πληγώνω','σκοτώνω','προσεύχομαι','ικετεύω','πειθώ','επιστρέφω','σέρνω','θρηνώ','κηδεύω','καίω','οπλίζω','σφυρηλατώ','προκαλώ']},
+    {title:'Συνδετικά',items:['αρχικά','στη συνέχεια','όμως','επομένως','στο τέλος','ξαφνικά','μετά','επειδή','αν και']}
+  ]
+};
+let LANG='el';
+
+const pagesDiv=document.getElementById('pages');
+const titleInput=document.getElementById('titleInput');
+const studentInput=document.getElementById('studentInput');
+let activeTA=null;
+
+/* ===== Build story pages (images 1..24) ===== */
+function buildPages(){
+  pagesDiv.innerHTML='';
+  for(let i=1;i<=24;i++){
+    const page=document.createElement('div'); page.className='page'; page.dataset.page=i;
+    const img=document.createElement('img'); img.src=`${i}.jpg`; img.alt=`${i}.jpg`; img.draggable=false;
+    const ta=document.createElement('textarea'); ta.placeholder=UI[LANG].ph; ta.addEventListener('focus',()=>activeTA=ta);
+    const pt=document.createElement('div'); pt.className='print-text';
+    page.appendChild(img); page.appendChild(ta); page.appendChild(pt);
+    pagesDiv.appendChild(page);
+  }
+}
+
+/* ===== Word bank modal ===== */
+const modal=document.getElementById('bankModal');
+const bankContent=document.getElementById('bankContent');
+document.getElementById('bankBtn').onclick=()=>{
+  bankContent.innerHTML='';
+  (BANK[LANG]||[]).forEach(group=>{
+    const h=document.createElement('div'); h.style.margin='6px 0'; h.innerHTML=`<strong>${group.title}</strong>`;
+    const chips=document.createElement('div'); chips.className='chips';
+    group.items.forEach(w=>{
+      const c=document.createElement('span'); c.className='chip'; c.textContent=w;
+      c.onclick=()=>{
+        const ta=activeTA || document.querySelector('textarea'); if(!ta) return;
+        const s=ta.selectionStart,e=ta.selectionEnd;
+        const pre=ta.value.slice(0,s), post=ta.value.slice(e);
+        const needsSpaceBefore = pre && !pre.endsWith(' ');
+        const needsSpaceAfter  = post && !post.startsWith(' ');
+        const insert=(needsSpaceBefore?' ':'')+w+(needsSpaceAfter?' ':'');
+        ta.value = pre + insert + post;
+        ta.focus(); ta.selectionStart=ta.selectionEnd=(pre+insert).length;
+      };
+      chips.appendChild(c);
+    });
+    bankContent.appendChild(h); bankContent.appendChild(chips);
+  });
+  modal.style.display='flex';
+};
+document.getElementById('bankClose').onclick=()=>modal.style.display='none';
+modal.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
+
+/* ===== Language toggle ===== */
+document.getElementById('langBtn').onclick=()=>{
+  LANG = (LANG==='en') ? 'el' : 'en';
+  document.getElementById('bankBtn').textContent = (LANG==='en')? 'Word Bank' : 'Λεξιλόγιο';
+  document.getElementById('bankClose').textContent = (LANG==='en')? 'Close' : 'Κλείσιμο';
+  titleInput.placeholder  = (LANG==='en')? UI.en.titlePH   : UI.el.titlePH;
+  studentInput.placeholder= (LANG==='en')? UI.en.studentPH: UI.el.studentPH;
+  document.querySelectorAll('textarea').forEach(t=> t.placeholder = UI[LANG].ph);
+};
+
+/* ===== Print: create a side-by-side title page with 0.jpg; copy textarea text ===== */
+function preparePrint(){
+  // Copy story text into printable divs
+  document.querySelectorAll('.page').forEach(page=>{
+    const ta=page.querySelector('textarea'); const pt=page.querySelector('.print-text');
+    pt.textContent = ta.value;
+  });
+
+  // Build title page (0.jpg + Title/Name side-by-side)
+  const holder=document.getElementById('printTitlePage');
+  const title=(titleInput.value||'').trim() || 'Helen — Storybook';
+  const student=(studentInput.value||'').trim() || '';
+  const imgExists = true; // we'll set src and let onerror hide if missing
+  holder.innerHTML = `
+    <img class="thumb" src="0.jpg" alt="Cover thumbnail" onerror="this.style.display='none'">
+    <div>
+      <h1>${escapeHtml(title)}</h1>
+      ${student ? `<h2>${escapeHtml(student)}</h2>` : ''}
+    </div>
+  `;
+  holder.style.display='grid';
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;' }[m])); }
+
+document.getElementById('printBtn').onclick=()=>{ preparePrint(); window.print(); };
+if('onbeforeprint' in window){ window.addEventListener('beforeprint', preparePrint); }
+
+/* ===== Formspree: send title + student + all page text ===== */
+document.getElementById('mailForm').addEventListener('submit', ()=>{
+  const parts=[];
+  const title=(titleInput.value||'').trim();
+  const student=(studentInput.value||'').trim();
+  if(title)   parts.push(`Title: ${title}\n`);
+  if(student) parts.push(`Student: ${student}\n`);
+  document.querySelectorAll('.page').forEach((p,i)=>{
+    const txt=p.querySelector('textarea').value||'';
+    parts.push(`Page ${i+1}:\n${txt}\n`);
+  });
+  document.getElementById('hiddenStory').value = parts.join('\n');
+});
+
+/* ===== Init ===== */
+buildPages();
+// Set initial placeholders and labels to Greek since default language is Greek
+
+titleInput.placeholder  = UI.el.titlePH;
+studentInput.placeholder= UI.el.studentPH;
+document.getElementById('bankBtn').textContent = UI.el.bank;
+document.getElementById('bankClose').textContent = UI.el.close;
+document.querySelectorAll('textarea').forEach(t=> t.placeholder = UI.el.ph);
+</script>
+</body>
+</html>
