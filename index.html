@@ -2,7 +2,7 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8" />
-<title>Helen — Storybook Builder</title>
+<title>Iliad — Storybook Builder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root{
@@ -76,7 +76,7 @@
   <div class="header-wrap">
     <div class="brand">
       <img id="brandThumb" src="0.jpg" alt="Cover thumbnail" onerror="this.style.display='none'">
-      <div class="app-title">📖 Helen — Storybook Builder ✨✍️ Devised by Panagiotis Domvros, English and Drama Teacher ✍️✨</div>
+      <div class="app-title">📖 Iliad— Storybook Builder ✨✍️ Devised by Panagiotis Domvros, English and Drama Teacher ✍️✨</div>
     </div>
 
     <div class="toolbar">
@@ -217,7 +217,7 @@ function preparePrint(){
 
   // Build title page (0.jpg + Title/Name side-by-side)
   const holder=document.getElementById('printTitlePage');
-  const title=(titleInput.value||'').trim() || 'Helen — Storybook';
+  const title=(titleInput.value||'').trim() || Iliad— Storybook';
   const student=(studentInput.value||'').trim() || '';
   const imgExists = true; // we'll set src and let onerror hide if missing
   holder.innerHTML = `
