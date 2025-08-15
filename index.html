@@ -75,7 +75,7 @@
 <header>
   <div class="header-wrap">
     <div class="brand">
-      <img id="brandThumb" src="0.jpg" alt="Cover thumbnail" onerror="this.style.display='none'">
+      <img id="brandThumb" src="0.jpg" alt="Cover thumbnail">
       <div class="app-title">📖 Iliad— Storybook Builder ✨✍️ Devised by Panagiotis Domvros, English and Drama Teacher ✍️✨</div>
     </div>
 
@@ -155,12 +155,22 @@ const titleInput=document.getElementById('titleInput');
 const studentInput=document.getElementById('studentInput');
 let activeTA=null;
 
+function escapeHtml(s){ return (s||'').replace(/[&<>\"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
 /* ===== Build story pages (images 1..24) ===== */
 function buildPages(){
   pagesDiv.innerHTML='';
   for(let i=1;i<=24;i++){
     const page=document.createElement('div'); page.className='page'; page.dataset.page=i;
+
     const img=document.createElement('img'); img.src=`${i}.jpg`; img.alt=`${i}.jpg`; img.draggable=false;
+    // Debug missing images
+    img.onerror = function() {
+      console.error(`Image not found: ${img.src}`);
+      this.src = 'placeholder.jpg'; // optional fallback image
+      this.alt = `Missing: ${i}.jpg`;
+    };
+
     const ta=document.createElement('textarea'); ta.placeholder=UI[LANG].ph; ta.addEventListener('focus',()=>activeTA=ta);
     const pt=document.createElement('div'); pt.className='print-text';
     page.appendChild(img); page.appendChild(ta); page.appendChild(pt);
@@ -217,9 +227,8 @@ function preparePrint(){
 
   // Build title page (0.jpg + Title/Name side-by-side)
   const holder=document.getElementById('printTitlePage');
-  const title=(titleInput.value||'').trim() || Iliad— Storybook';
+  const title=(titleInput.value||'').trim() || 'Iliad — Storybook';
   const student=(studentInput.value||'').trim() || '';
-  const imgExists = true; // we'll set src and let onerror hide if missing
   holder.innerHTML = `
     <img class="thumb" src="0.jpg" alt="Cover thumbnail" onerror="this.style.display='none'">
     <div>
@@ -229,10 +238,14 @@ function preparePrint(){
   `;
   holder.style.display='grid';
 }
-function escapeHtml(s){ return s.replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;' }[m])); }
 
-document.getElementById('printBtn').onclick=()=>{ preparePrint(); window.print(); };
-if('onbeforeprint' in window){ window.addEventListener('beforeprint', preparePrint); }
+// Cover image debug
+const brandThumb = document.getElementById('brandThumb');
+brandThumb.onerror = function() {
+  console.error(`Image not found: ${brandThumb.src}`);
+  this.src = 'placeholder.jpg';
+  this.alt = 'Missing: 0.jpg';
+};
 
 /* ===== Formspree: send title + student + all page text ===== */
 document.getElementById('mailForm').addEventListener('submit', ()=>{
@@ -249,14 +262,24 @@ document.getElementById('mailForm').addEventListener('submit', ()=>{
 });
 
 /* ===== Init ===== */
-buildPages();
-// Set initial placeholders and labels to Greek since default language is Greek
-
-titleInput.placeholder  = UI.el.titlePH;
-studentInput.placeholder= UI.el.studentPH;
-document.getElementById('bankBtn').textContent = UI.el.bank;
-document.getElementById('bankClose').textContent = UI.el.close;
-document.querySelectorAll('textarea').forEach(t=> t.placeholder = UI.el.ph);
+function init(){
+  console.log('Initializing Storybook Builder…');
+  buildPages();
+  // Set initial placeholders and labels to Greek since default language is Greek
+  titleInput.placeholder  = UI.el.titlePH;
+  studentInput.placeholder= UI.el.studentPH;
+  document.getElementById('bankBtn').textContent = UI.el.bank;
+  document.getElementById('bankClose').textContent = UI.el.close;
+  document.querySelectorAll('textarea').forEach(t=> t.placeholder = UI.el.ph);
+  // Bind print
+  document.getElementById('printBtn').onclick=()=>{ preparePrint(); window.print(); };
+  if('onbeforeprint' in window){ window.addEventListener('beforeprint', preparePrint); }
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+}else{
+  init();
+}
 </script>
 </body>
 </html>
